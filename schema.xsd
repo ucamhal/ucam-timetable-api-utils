@@ -1,0 +1,89 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+  <xs:element name="moduleList">
+    <xs:complexType>
+      <xs:sequence>
+
+        <xs:element name="module" maxOccurs="unbounded">
+          <xs:complexType>
+            <xs:sequence>
+
+              <xs:element name="path">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="tripos" type="xs:string"/>
+                    <xs:element name="part" type="xs:string"/>
+                    <xs:element name="subject" type="xs:string" minOccurs="0"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+
+              <xs:element name="name" type="xs:string"/>
+
+              <xs:choice>
+                <xs:element name="delete" type="xs:string"/>
+                <xs:element name="series" maxOccurs="unbounded">
+                  <xs:complexType>
+                    <xs:sequence>
+                      <xs:element name="uniqueid" type="xs:string"/>
+                      <xs:element name="name" type="xs:string"/>
+
+                      <xs:choice>
+
+                        <xs:element name="delete" type="xs:string"/>
+                        <xs:element name="event" maxOccurs="unbounded">
+                          <xs:complexType>
+                            <xs:sequence>
+                              <xs:element name="uniqueid" type="xs:string"/>
+                              <xs:choice>
+
+                                <xs:element name="delete" type="xs:string"/>
+                                
+                                <xs:sequence>
+                                  <xs:element name="name" type="xs:string"/>
+                                  <xs:element name="location" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                                  <xs:element name="lecturer" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+                                  <xs:element name="date" type="xs:date"/>
+                                  <xs:element name="start" type="xs:time"/>
+                                  <xs:choice>
+                                    <xs:element name="end" type="xs:time"/>
+                                    <xs:element name="duration" type="xs:time"/>
+                                  </xs:choice>
+                                  <xs:element name="type">
+                                    <xs:simpleType>
+                                      <xs:restriction base="xs:string">
+                                        <xs:enumeration value="field trip"/>
+                                        <xs:enumeration value="lecture"/>
+                                        <xs:enumeration value="class"/>
+                                        <xs:enumeration value="seminar"/>
+                                        <xs:enumeration value="practical"/>
+                                        <xs:enumeration value="presentation"/>
+                                        <xs:enumeration value="workshop"/>
+                                        <xs:enumeration value="journal club"/>
+                                        <xs:enumeration value=""/>
+                                      </xs:restriction>
+                                    </xs:simpleType>
+                                  </xs:element>
+                                </xs:sequence>
+
+                              </xs:choice>
+                            </xs:sequence>
+                          </xs:complexType>
+                        </xs:element>
+
+                      </xs:choice>
+                      
+                    </xs:sequence>
+                  </xs:complexType>
+                </xs:element>
+              </xs:choice>
+
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>
