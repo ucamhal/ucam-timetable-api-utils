@@ -129,6 +129,17 @@ def generate_deletes(current, future, merge=True):
     work out which parts of current are not needed in future, and mark
     them for deletion in future.
     """
+
+    # Situation: We have 2 trees, the current state (A) and the target
+    # state (B). We want to generate a third state (C) with the necessary
+    # (delete) commands to have the Timetable v0 API produce the future
+    # when C is imported.
+    # Strategy:
+    # Merge A with B:
+    #  - When something exists in A but not B, mark it for deletion
+    #  - When something exists in B but not A, keep it unchanged
+    #  - When something exists in A and B, use the version from B
+
     input_tree = wrap("states", [
         wrap("current", [current.getroot()]),
         wrap("future", [future.getroot()])
