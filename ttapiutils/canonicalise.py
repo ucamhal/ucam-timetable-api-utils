@@ -15,7 +15,7 @@ import docopt
 import pkg_resources
 from lxml import etree
 
-from ttapiutils.utils import parse_xml, API_SCHEMA
+from ttapiutils.utils import parse_xml, assert_valid, write_c14n_pretty
 
 def get_canonicalise_transform():
 	canonicalise_xsl = pkg_resources.resource_stream(
@@ -27,17 +27,8 @@ CANONICALISE_TRANSFORM = get_canonicalise_transform()
 
 
 def canonicalise(api_xml):
-	API_SCHEMA.assertValid(api_xml)
+	assert_valid(api_xml)
 	return CANONICALISE_TRANSFORM(api_xml)
-
-
-def write_c14n_pretty(xml, file):
-	"""
-	Insert indentation into xml before writing to file using
-	write_c14n().
-	"""
-	pretty_xml = etree.fromstring(etree.tostring(xml, pretty_print=True))
-	pretty_xml.getroottree().write_c14n(file)
 
 
 def main(args):

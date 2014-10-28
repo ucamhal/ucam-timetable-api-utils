@@ -18,3 +18,12 @@ def assert_valid(api_xml):
 def parse_xml(file):
 	return etree.parse(file, _parser)
 _parser = etree.XMLParser(remove_blank_text=True)
+
+
+def write_c14n_pretty(xml, file):
+	"""
+	Insert indentation into xml before writing to file using
+	write_c14n().
+	"""
+	pretty_xml = etree.fromstring(etree.tostring(xml, pretty_print=True))
+	pretty_xml.getroottree().write_c14n(file)
