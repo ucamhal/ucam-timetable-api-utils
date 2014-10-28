@@ -19,7 +19,8 @@ setup(
             "ttapiutils = ttapiutils:main"
         ],
         "ttapiutils_subcommands": [
-            "canonicalise = ttapiutils.canonicalise"
+            "canonicalise = ttapiutils.canonicalise",
+            "merge = ttapiutils.merge"
         ]
     },
     packages=['ttapiutils'],
