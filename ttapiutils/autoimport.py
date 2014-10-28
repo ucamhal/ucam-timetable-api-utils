@@ -38,7 +38,7 @@ options:
         Generate all data, but don't actually perform the final
         xmlimport on the timetable site.
 
-    -X=<param>=<value>...
+    -X=<name>=<value>...
         Extension parameters to send to the data source.
 
 """
@@ -47,3 +47,47 @@ options:
     - ttapiutils.autoimport.generators: engineering
 # domain to upload to
 # list of of paths to be affected
+from ttapiutils.utils import parse_xml
+
+
+class NoSuchDataSourceException(TimetableApiUtilsException):
+    pass
+
+
+def get_defined_data_source_entrypoints():
+    (ep.name, ep) for ep in
+        pkg_resources.iter_entry_points(
+            group="ttapiutils.autoimport.datasources"))
+
+
+class StreamDataSource(object):
+    def __init__(self, file):
+        self.file = file
+
+    def get_xml(self):
+        return parse_xml(self.file)
+
+
+def get_data_source(data_source_name, data_source_entrypoints):
+    if data_source_name == "-":
+        return StreamDataSource(sys.stdin)
+
+    if not data_source_name in data_source_entrypoints:
+        raise NoSuchDataSourceException("No such data source: {!r}".format(data_source_name))
+
+    return data_source_entrypoints[data_source_name]
+
+
+class AutoImporter(object):
+    def __init__(self, data_source):
+        self.data_source = data_source
+
+
+class AuditTrailAutoImporter(AutoImporter):
+    def __init__(self, audit_base_dir, *args, **kwargs):
+        super(AuditTrailAutoImporter, self).__init__(*args, **kwargs)
+        self.audit_base_dir = audit_base_dir
+
+
+def main(argv):
+    pass

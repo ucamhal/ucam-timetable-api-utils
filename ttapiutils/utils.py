@@ -2,6 +2,12 @@ from lxml import etree
 import pkg_resources
 
 
+class TimetableApiUtilsException(Exception):
+	"""
+	The base exception for all exceptions raised by ttapiutils APIs.
+	"""
+
+
 def _get_api_xml_schema():
     schema_xsl = pkg_resources.resource_stream(
         "ttapiutils.utils", "data/schema.xsd")
