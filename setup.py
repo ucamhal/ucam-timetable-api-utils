@@ -20,7 +20,8 @@ setup(
         ],
         "ttapiutils_subcommands": [
             "canonicalise = ttapiutils.canonicalise",
-            "merge = ttapiutils.merge"
+            "merge = ttapiutils.merge",
+            "fixexport = ttapiutils.fixexport"
         ]
     },
     packages=['ttapiutils'],
