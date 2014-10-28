@@ -25,5 +25,6 @@ def write_c14n_pretty(xml, file):
 	Insert indentation into xml before writing to file using
 	write_c14n().
 	"""
-	pretty_xml = etree.fromstring(etree.tostring(xml, pretty_print=True))
+	pretty_xml = etree.fromstring(
+		etree.tostring(xml, pretty_print=True, encoding="utf-8"))
 	pretty_xml.getroottree().write_c14n(file)

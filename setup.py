@@ -21,7 +21,8 @@ setup(
         "ttapiutils_subcommands": [
             "canonicalise = ttapiutils.canonicalise",
             "merge = ttapiutils.merge",
-            "fixexport = ttapiutils.fixexport"
+            "fixexport = ttapiutils.fixexport",
+            "xmlexport = ttapiutils.xmlexport"
         ]
     },
     packages=['ttapiutils'],
