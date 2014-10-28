@@ -15,12 +15,7 @@ import docopt
 import pkg_resources
 from lxml import etree
 
-
-def get_api_xml_schema():
-	schema_xsl = pkg_resources.resource_stream(
-		"ttapiutils.canonicalise", "data/schema.xsd")
-	return etree.XMLSchema(etree.parse(schema_xsl))
-
+from ttapiutils.utils import parse_xml, API_SCHEMA
 
 def get_canonicalise_transform():
 	canonicalise_xsl = pkg_resources.resource_stream(
@@ -28,7 +23,6 @@ def get_canonicalise_transform():
 	return etree.XSLT(etree.parse(canonicalise_xsl))
 
 
-API_SCHEMA = get_api_xml_schema()
 CANONICALISE_TRANSFORM = get_canonicalise_transform()
 
 
@@ -49,7 +43,6 @@ def write_c14n_pretty(xml, file):
 def main(args):
 	docopt.docopt(__doc__, argv=args)
 
-	parser = etree.XMLParser(remove_blank_text=True)
-	api_xml = etree.parse(sys.stdin, parser)
+	api_xml = parse_xml(sys.stdin)
 	canonic_xml = canonicalise(api_xml)
 	write_c14n_pretty(canonic_xml, sys.stdout)
