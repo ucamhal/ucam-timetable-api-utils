@@ -16,7 +16,9 @@ def assert_valid(api_xml):
 
 
 def parse_xml(file):
-	return etree.parse(file, _parser)
+	xml = etree.parse(file, _parser)
+	assert_valid(xml)
+	return xml
 _parser = etree.XMLParser(remove_blank_text=True)
 
 

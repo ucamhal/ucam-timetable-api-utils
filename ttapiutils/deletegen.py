@@ -2,6 +2,8 @@
 This program is a workaround to automatically generate <delete/> operations
 required by the Timetable 3 v0 API's XML import feature.
 
+usage: ttapiutils deletegen [options] <current_state> <future_state>
+
 One might assume that submitting an XML file (<moduleList>) to
 /api/v0/xmlimport would result in the API updating the state to match the
 given representation. Unfortunately, the submitted XML file is not so much
@@ -20,12 +22,11 @@ This program basically performs step c), given a) and b) as inputs.
 It pains me that this program needs to exist. The need for it should be
 removed at the earliest opportunity.
 
-usage: generate_api_v0_deletes.py [options] <current_state> <future_state>
-
 options:
-    -h --help    Show this help text
+    -h --help
+        Show this help text
 """
-from __future__ import unicode_literals, print_function
+from __future__ import unicode_literals
 
 from copy import deepcopy
 from os import path
@@ -34,9 +35,7 @@ import sys
 import docopt
 from lxml import etree
 
-
-SCHEMA_FILE = path.join(path.dirname(__file__), "schema.xsd")
-SCHEMA = etree.XMLSchema(file=SCHEMA_FILE)
+from ttapiutils.utils import assert_valid, parse_xml
 
 
 def wrap(name, elements):
@@ -150,6 +149,9 @@ def generate_deletes(current, future):
     them for deletion in future.
     """
 
+    assert_valid(current)
+    assert_valid(future)
+
     # Situation: We have 2 trees, the current state (A) and the target
     # state (B). We want to generate a third state (C) with the necessary
     # (delete) commands to have the Timetable v0 API produce the future
@@ -164,22 +166,15 @@ def generate_deletes(current, future):
     # This merged result would result in the future state when applied to
     # the current state via the Timetable v0 API...
     merged = merge_module_lists(current, future)
-    SCHEMA.assertValid(merged)
+    assert_valid(merged)
     return merged
 
 
-def parse(filename):
-    parser = etree.XMLParser(remove_blank_text=True)
-    xml = etree.parse(filename, parser=parser)
-    SCHEMA.assertValid(xml)
-    return xml
+def main(argv):
+    args = docopt.docopt(__doc__, argv=argv)
 
-
-def main():
-    args = docopt.docopt(__doc__)
-
-    current_state = parse(args["<current_state>"])
-    future_state = parse(args["<future_state>"])
+    current_state = parse_xml(args["<current_state>"])
+    future_state = parse_xml(args["<future_state>"])
 
     with_deletes = generate_deletes(current_state, future_state)
 
@@ -207,7 +202,3 @@ def dictzip_longest(*dicts, **kwargs):
     fillvalue = kwargs.get("fillvalue", None)
     keys = reduce(set.union, [set(d.keys()) for d in dicts], set())
     return [tuple([k] + [d.get(k, fillvalue) for d in dicts]) for k in keys]
-
-
-if __name__ == "__main__":
-    main()

@@ -22,7 +22,8 @@ setup(
             "canonicalise = ttapiutils.canonicalise",
             "merge = ttapiutils.merge",
             "fixexport = ttapiutils.fixexport",
-            "xmlexport = ttapiutils.xmlexport"
+            "xmlexport = ttapiutils.xmlexport",
+            "deletegen = ttapiutils.deletegen"
         ]
     },
     packages=['ttapiutils'],
