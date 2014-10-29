@@ -23,7 +23,8 @@ setup(
             "merge = ttapiutils.merge",
             "fixexport = ttapiutils.fixexport",
             "xmlexport = ttapiutils.xmlexport",
-            "deletegen = ttapiutils.deletegen"
+            "deletegen = ttapiutils.deletegen",
+            "xmlimport = ttapiutils.xmlimport"
         ]
     },
     packages=['ttapiutils'],
