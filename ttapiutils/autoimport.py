@@ -47,7 +47,13 @@ options:
     - ttapiutils.autoimport.generators: engineering
 # domain to upload to
 # list of of paths to be affected
-from ttapiutils.utils import parse_xml
+
+from ttapiutils.canonicalise import canonicalise
+from ttapiutils.fixexport import fix_export_ids
+from ttapiutils.utils import (parse_xml, read_password, get_credentials,
+                              get_proto, TimetableApiUtilsException)
+from ttapiutils.xmlexport import xmlexport
+from ttapiutils.xmlimport import xmlimport
 
 
 class NoSuchDataSourceException(TimetableApiUtilsException):
@@ -81,6 +87,54 @@ def get_data_source(data_source_name, data_source_entrypoints):
 class AutoImporter(object):
     def __init__(self, data_source):
         self.data_source = data_source
+
+    def get_paths(self):
+        raise NotImplementedError()
+
+    def get_proto(self):
+        raise NotImplementedError()
+
+    def get_domain(self):
+        raise NotImplementedError()
+
+    def get_auth(self):
+        raise NotImplementedError()
+
+    def get_raw_new_state(self):
+        return self.data_source.get_xml()
+
+    def get_canonical_new_state(self):
+        return canonicalise(self.get_raw_new_state())
+
+    def get_raw_old_state(self, path):
+        return xmlexport(self.get_domain(), path, auth=self.get_auth(),
+                         proto=self.get_proto(), fix_ids=False)
+
+    def get_fixed_old_state(self, path):
+        """
+        As get_raw_old_state() but with event IDs fixed.
+        """
+        return fix_export_ids(self.get_raw_old_state(path))
+
+    def get_merged_old_state(self):
+        return merge(
+            self.get_fixed_old_state(path) for path in self.get_paths())
+
+    def get_canonical_merged_old_state(self):
+        return canonicalise(self.get_merged_old_state())
+
+    def get_state_with_deletes(self):
+        old_state = get_canonical_merged_old_state()
+        new_state = self.get_canonical_new_state()
+        return generate_deletes(old_state, new_state)
+
+    def import_to_timetable(self, api_xml):
+        return xmlimport(api_xml, self.get_domain(), self.get_paths(),
+                  self.get_proto(), self.get_auth())
+
+    def autoimport(self):
+        api_xml = self.get_state_with_deletes()
+        self.import_to_timetable(api_xml)
 
 
 class AuditTrailAutoImporter(AutoImporter):
