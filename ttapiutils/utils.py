@@ -1,4 +1,8 @@
+import getpass
+import os
+
 from lxml import etree
+from requests.auth import HTTPBasicAuth
 import pkg_resources
 
 
@@ -36,3 +40,20 @@ def write_c14n_pretty(xml, file):
 	pretty_xml = etree.fromstring(
 		etree.tostring(xml, pretty_print=True, encoding="utf-8"))
 	pretty_xml.getroottree().write_c14n(file)
+
+
+def read_password(envar):
+    if not envar:
+        return getpass.getpass()
+    return os.environ.get(envar, "")
+
+
+def get_credentials(args):
+    user = args.get("--user")
+    if user:
+        return HTTPBasicAuth(user, read_password(args.get("--pass-envar")))
+    return None
+
+
+def get_proto(args):
+	return "http" if args.get("--no-https") else "https"

@@ -17,7 +17,7 @@ options:
 
     --https
     --no-https
-        Use or don't use https (default).
+        Use or don't use https [default: https].
 
     --fix-ids
         Fix exorted event IDs with ttapiutils fixexport (default)
@@ -29,19 +29,18 @@ options:
         Show this help message
 """
 from cStringIO import StringIO
-import getpass
-import os
 import sys
 import urlparse
 
-from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
 import docopt
 import requests
 
 from ttapiutils.merge import merge
 from ttapiutils.fixexport import fix_export_ids
-from ttapiutils.utils import write_c14n_pretty, parse_xml, assert_valid
+from ttapiutils.utils import (
+    write_c14n_pretty, parse_xml, assert_valid, read_password,
+    get_credentials, get_proto)
 
 
 class ExportException(Exception):
@@ -53,23 +52,10 @@ def build_api_export_url(domain, path, proto="https"):
     return urlparse.urlunparse((proto, domain, full_path, None, None, None))
 
 
-def read_password(envar):
-    if not envar:
-        return getpass.getpass()
-    return os.environ.get(envar, "")
-
-
-def get_credentials(args):
-    user = args.get("--user")
-    if user:
-        return HTTPBasicAuth(user, read_password(args.get("--pass-envar")))
-    return None
-
-
 def xmlexport(domain, path, auth=None, proto="https", fix_ids=True):
     url = build_api_export_url(domain, path, proto=proto)
     try:
-        response = requests.get(url, auth=auth)
+        response = requests.get(url, auth=auth, allow_redirects=False)
         if response.status_code != requests.codes.ok:
             response.raise_for_status()
     except RequestException as e:
@@ -89,7 +75,7 @@ def main(argv):
     args = docopt.docopt(__doc__, argv=argv)
 
     credentials = get_credentials(args)
-    proto = "http" if args.get("--no-https") else "https"
+    proto = get_proto(args)
     domain = args["<domain>"]
     paths = args["<path>"]
     fix_ids = not args.get("--no-fix-ids")
