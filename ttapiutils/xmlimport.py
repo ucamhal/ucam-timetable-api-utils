@@ -56,7 +56,7 @@ import requests
 
 from ttapiutils.utils import (
     parse_xml, read_password, get_credentials, get_proto, assert_valid,
-    TimetableApiUtilsException)
+    TimetableApiUtilsException, serialise_http_request)
 
 
 # The field name of the XML file in the multipart POST payload to /api/v0/xmlimport
@@ -117,8 +117,8 @@ def xmlimport(api_xml, domain, paths=None, proto="https", auth=None,
     """
     Make an import request to the Timetable API with the provided xml.
 
-    Returns a requests library Response object unless dry_run is True, in
-    which case a PreparedRequest is returned.
+    Returns a tuple of (request, response). If dry_run is True response will
+    be None as no request will be made.
     """
     if paths is not None:
         ensure_xml_only_affects_paths(api_xml, paths)
@@ -150,7 +150,7 @@ def xmlimport(api_xml, domain, paths=None, proto="https", auth=None,
 
         # Don't actually send the POST if it's a dry_run
         if dry_run:
-            return request.prepare()
+            return (request.prepare(), None)
 
         response = requests.Session().send(request.prepare(), allow_redirects=False)
         if response.status_code != requests.codes.ok:
@@ -162,7 +162,7 @@ def xmlimport(api_xml, domain, paths=None, proto="https", auth=None,
         raise ImportError(
             "non-200 response received: {:d}".format(response.status_code),
             response, e)
-    return response
+    return (response.request, response)
 
 
 def print_response(response):
@@ -172,13 +172,7 @@ def print_response(response):
 
 def print_dry_run_prepared_request(p, file=sys.stdout):
     print("--dry-run enabled, the following would have been sent:\n", file=sys.stderr)
-    # This is not a real HTTP request, but similar
-    print("{} {}".format(p.method, p.url), file=file)
-    headers = "\n".join("{}: {}".format(k, v)
-                        for (k, v) in p.headers.items())
-    print(headers, file=file)
-    print(file=file)
-    print(p.body, file=file, end="")
+    serialise_http_request(p, file=file)
 
 def main(argv):
     args = docopt.docopt(__doc__, argv=argv)

@@ -24,14 +24,17 @@ setup(
             "fixexport = ttapiutils.fixexport",
             "xmlexport = ttapiutils.xmlexport",
             "deletegen = ttapiutils.deletegen",
-            "xmlimport = ttapiutils.xmlimport"
+            "xmlimport = ttapiutils.xmlimport",
+            "autoimport = ttapiutils.autoimport"
         ]
     },
     packages=['ttapiutils'],
     include_package_data=True,
     requires=[
         "docopt (>=0.6.2)",
-        "lxml (>=3.3.5)"
+        "lxml (>=3.3.5)",
+        "requests (>=2.4.3)",
+        "pytz (>=2014.7)"
     ],
     license="BSD",
     classifiers=[
