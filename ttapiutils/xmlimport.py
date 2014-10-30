@@ -37,6 +37,10 @@ options:
     --no-https
         Use or don't use https [default: https].
 
+    --dry-run
+        Do everything except actually send the POST with the API XML. The
+        HTTP request that would be made is sent to stdout
+
     -v, --verbose
         Be more verbose.
 """
@@ -108,7 +112,14 @@ def get_csrf_token(url, auth=None):
             .format(url), response, e)
 
 
-def xmlimport(api_xml, domain, paths=None, proto="https", auth=None):
+def xmlimport(api_xml, domain, paths=None, proto="https", auth=None,
+              dry_run=False):
+    """
+    Make an import request to the Timetable API with the provided xml.
+
+    Returns a requests library Response object unless dry_run is True, in
+    which case a PreparedRequest is returned.
+    """
     if paths is not None:
         ensure_xml_only_affects_paths(api_xml, paths)
 
@@ -131,9 +142,17 @@ def xmlimport(api_xml, domain, paths=None, proto="https", auth=None):
 
     response = None
     try:
-        response = requests.post(url, files=files, data=data, headers=headers,
-                                 cookies=cookies, allow_redirects=False,
-                                 auth=auth)
+        # Construct a request explicitly so that we can return a prepared
+        # request for dry runs.
+        request = requests.Request(
+            b"POST", url, files=files, data=data, headers=headers,
+            cookies=cookies, auth=auth)
+
+        # Don't actually send the POST if it's a dry_run
+        if dry_run:
+            return request.prepare()
+
+        response = requests.Session().send(request.prepare(), allow_redirects=False)
         if response.status_code != requests.codes.ok:
             response.raise_for_status()
     except RequestException as e:
@@ -151,12 +170,23 @@ def print_response(response):
     print(response.content, file=sys.stdout)
 
 
+def print_dry_run_prepared_request(p, file=sys.stdout):
+    print("--dry-run enabled, the following would have been sent:\n", file=sys.stderr)
+    # This is not a real HTTP request, but similar
+    print("{} {}".format(p.method, p.url), file=file)
+    headers = "\n".join("{}: {}".format(k, v)
+                        for (k, v) in p.headers.items())
+    print(headers, file=file)
+    print(file=file)
+    print(p.body, file=file, end="")
+
 def main(argv):
     args = docopt.docopt(__doc__, argv=argv)
 
     credentials = get_credentials(args)
     proto = get_proto(args)
     domain = args["<domain>"]
+    dry_run = args["--dry-run"]
 
     paths = None if args["--allow-any-path"] is True else args["--path"]
     assert paths is None or len(paths) > 0
@@ -166,7 +196,11 @@ def main(argv):
 
     try:
         response = xmlimport(api_xml, domain, paths=paths, proto=proto,
-                             auth=credentials)
+                             auth=credentials, dry_run=dry_run)
+        if dry_run:
+            prepared_request = response
+            print_dry_run_prepared_request(prepared_request)
+            return
     except ImportError as e:
         if args["--verbose"] and e.args[1] is not None:
             response = e.args[1]
