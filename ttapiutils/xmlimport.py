@@ -102,6 +102,8 @@ def get_csrf_token(url, auth=None):
         response = requests.get(url, auth=auth, allow_redirects=False)
         if response.status_code != requests.codes.ok:
             response.raise_for_status()
+            raise ImportError("Non-200 status code received to request for: "
+                              "{}. {}".format(url, response.status_code))
 
         if "csrftoken" not in response.cookies:
             raise ImportError("No csrftoken cookie in GET for: {}".format(url), None, None)
@@ -155,6 +157,8 @@ def xmlimport(api_xml, domain, paths=None, proto="https", auth=None,
         response = requests.Session().send(request.prepare(), allow_redirects=False)
         if response.status_code != requests.codes.ok:
             response.raise_for_status()
+            raise ImportError("Non-200 status code received to request for: "
+                              "{}. {}".format(url, response.status_code))
     except RequestException as e:
         if response is None:
             raise ImportError("Unable to make import request: {}".format(e), None, e)

@@ -32,6 +32,7 @@ from cStringIO import StringIO
 import sys
 import urlparse
 
+from lxml import etree
 from requests.exceptions import RequestException
 import docopt
 import requests
@@ -47,6 +48,14 @@ class ExportException(Exception):
     pass
 
 
+class HttpRequestExportException(ExportException):
+    pass
+
+
+class XMLParseExportException(ExportException):
+    pass
+
+
 def build_api_export_url(domain, path, proto="https"):
     full_path = "/api/v0/xmlexport{}".format(path)
     return urlparse.urlunparse((proto, domain, full_path, None, None, None))
@@ -58,11 +67,19 @@ def xmlexport(domain, path, auth=None, proto="https", fix_ids=True):
         response = requests.get(url, auth=auth, allow_redirects=False)
         if response.status_code != requests.codes.ok:
             response.raise_for_status()
+            raise HttpRequestExportException(
+                "Non-200 response received to request for: {}. {}".format(
+                    url, response.status_code))
     except RequestException as e:
-        raise ExportException("Error requesting timetable: {}. {}"
-                              .format(url, e))
+        raise HttpRequestExportException("Error requesting timetable: {}. {}"
+                                         .format(url, e))
 
-    xml = parse_xml(StringIO(response.content))
+    try:
+        xml = parse_xml(StringIO(response.content))
+    except etree.Error as e:
+        raise XMLParseExportException(
+            "Unable to parse response as XML: {}".format(e), e, response)
+
     assert_valid(xml)
 
     if fix_ids:
