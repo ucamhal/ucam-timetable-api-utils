@@ -1,0 +1,37 @@
+<moduleList>
+  <module>
+    <path>
+      <tripos>asnc</tripos>
+      <part>I</part>
+    </path>
+    <name>Paper 1 - England before the Norman Conquest</name>
+    <series>
+      <uniqueid>foo</uniqueid>
+      <name>England c 450-900 (1st &amp; 2nd year students)</name>
+      <event>
+        <uniqueid>01040958-677b-47e8-8420-70f0c0ec8bf7</uniqueid>
+        <name>England c 450-900</name>
+        <location>History Building Room 5</location>
+        <lecturer>Prof. S D Keynes</lecturer>
+        <date>2013-11-20</date>
+        <start>10:00:00</start>
+        <end>11:00:00</end>
+        <type>lecture</type>
+      </event>
+    </series>
+    <series>
+      <uniqueid>foo</uniqueid>
+      <name>England c 450-900 (1st &amp; 2nd year students)</name>
+      <event>
+        <uniqueid>01040958-677b-47e8-8420-70f0c0ec8bf7</uniqueid>
+        <name>England c 450-900</name>
+        <location>History Building Room 5</location>
+        <lecturer>Prof. S D Keynes</lecturer>
+        <date>2013-11-20</date>
+        <start>10:00:00</start>
+        <end>11:00:00</end>
+        <type>lecture</type>
+      </event>
+    </series>
+  </module>
+</moduleList>

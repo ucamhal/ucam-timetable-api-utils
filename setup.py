@@ -30,12 +30,14 @@ setup(
     },
     packages=['ttapiutils'],
     include_package_data=True,
-    requires=[
-        "docopt (>=0.6.2)",
-        "lxml (>=3.3.5)",
-        "requests (>=2.4.3)",
-        "pytz (>=2014.7)"
+    install_requires=[
+        "docopt>=0.6.2",
+        "lxml>=3.3.5",
+        "requests>=2.4.3",
+        "pytz>=2014.7"
     ],
+    test_suite="ttapiutils.tests",
+    tests_require=[],
     license="BSD",
     classifiers=[
         "Intended Audience :: Developers",

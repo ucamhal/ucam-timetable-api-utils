@@ -1,0 +1,44 @@
+<moduleList>
+  <module>
+    <path>
+      <tripos>foo</tripos>
+      <part>I</part>
+    </path>
+    <name>Module A</name>
+    <series>
+      <uniqueid>blah</uniqueid>
+      <name>My Series</name>
+      <event>
+        <uniqueid>01040958-677b-47e8-8420-70f0c0ec8bf7</uniqueid>
+        <name>England c 450-900</name>
+        <location>History Building Room 5</location>
+        <lecturer>Prof. S D Keynes</lecturer>
+        <date>2013-11-20</date>
+        <start>10:00:00</start>
+        <end>11:00:00</end>
+        <type>lecture</type>
+      </event>
+    </series>
+  </module>
+  <module>
+    <path>
+      <tripos>foo</tripos>
+      <part>I</part>
+    </path>
+    <name>Module A</name>
+    <series>
+      <uniqueid>blah</uniqueid>
+      <name>My Series</name>
+      <event>
+        <uniqueid>01040958-677b-47e8-8420-70f0c0ec8bf7</uniqueid>
+        <name>England c 450-900</name>
+        <location>History Building Room 5</location>
+        <lecturer>Prof. S D Keynes</lecturer>
+        <date>2013-11-20</date>
+        <start>10:00:00</start>
+        <end>11:00:00</end>
+        <type>lecture</type>
+      </event>
+    </series>
+  </module>
+</moduleList>

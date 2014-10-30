@@ -1,0 +1,37 @@
+<moduleList>
+  <module>
+    <path>
+      <tripos>foo</tripos>
+      <part>I</part>
+    </path>
+    <name>Module Foo</name>
+    <series>
+      <uniqueid>blah</uniqueid>
+      <name>Series in current and future states</name>
+      <event>
+        <uniqueid>def</uniqueid>
+        <name>England c 450-900</name>
+        <location>History Building Room 5</location>
+        <lecturer>Prof. S D Keynes</lecturer>
+        <date>2013-11-20</date>
+        <start>10:00:00</start>
+        <end>11:00:00</end>
+        <type>lecture</type>
+      </event>
+    </series>
+    <series>
+      <uniqueid>blarg</uniqueid>
+      <name>Series not in future state</name>
+      <event>
+        <uniqueid>abc</uniqueid>
+        <name>England c 450-900</name>
+        <location>History Building Room 5</location>
+        <lecturer>Prof. S D Keynes</lecturer>
+        <date>2013-11-20</date>
+        <start>10:00:00</start>
+        <end>11:00:00</end>
+        <type>lecture</type>
+      </event>
+    </series>
+  </module>
+</moduleList>

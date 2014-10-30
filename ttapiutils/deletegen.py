@@ -35,7 +35,15 @@ import sys
 import docopt
 from lxml import etree
 
-from ttapiutils.utils import assert_valid, parse_xml
+from ttapiutils.utils import (
+    assert_valid,
+    parse_xml,
+    TimetableApiUtilsException
+)
+
+
+class DuplicateKeyException(TimetableApiUtilsException):
+    pass
 
 
 def wrap(name, elements):
@@ -62,7 +70,10 @@ def event_key(event):
 
 
 def index(items, key):
-    return dict((key(i), i) for i in items)
+    indexed = dict((key(i), i) for i in items)
+    if len(indexed) < len(items):
+        raise DuplicateKeyException("Two or more items share the same key")
+    return indexed
 
 
 def merge_module_lists(current, future):

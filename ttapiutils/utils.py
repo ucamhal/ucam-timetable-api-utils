@@ -35,14 +35,20 @@ def parse_xml(file):
 _parser = etree.XMLParser(remove_blank_text=True)
 
 
-def write_c14n_pretty(xml, file):
+
+def write_c14n_pretty(xml, file=None):
     """
     Insert indentation into xml before writing to file using
     write_c14n().
     """
+    out = StringIO() if file is None else file
+
     pretty_xml = etree.fromstring(
         etree.tostring(xml, pretty_print=True, encoding="utf-8"))
-    pretty_xml.getroottree().write_c14n(file)
+    pretty_xml.getroottree().write_c14n(out)
+
+    if file is None:
+        return out.getvalue()
 
 
 def read_password(envar):
