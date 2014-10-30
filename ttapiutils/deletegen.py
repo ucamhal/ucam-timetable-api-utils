@@ -115,6 +115,7 @@ def merge_series(current, future):
         series.append(deepcopy(current.xpath("uniqueid")[0]))
         series.append(deepcopy(current.xpath("name")[0]))
         etree.SubElement(series, "delete")
+        return series
     elif current is None:
         return deepcopy(future)
     else:
