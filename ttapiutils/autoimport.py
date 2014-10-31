@@ -1,5 +1,5 @@
 """
-usage: ttapiutils autoimport [options] <data-source> <domain> <path>...
+usage: ttapiutils autoimport [-X=<name>=<value>...] [options] <data-source> <domain> <path>...
        ttapiutils autoimport --complete-dry-run=<audit-dir>
 
 In the first form, <data-source> provides new timetable XML data
@@ -50,7 +50,7 @@ options:
         Generate all data, but don't actually perform the final
         xmlimport on the timetable site.
 
-    -X=<name>=<value>...
+    -X=<name>=<value>
         Extension parameters to send to the data source.
 """
 
@@ -58,7 +58,8 @@ options:
 #    - ttapiutils.autoimport.generators: engineering
 # domain to upload to
 # list of of paths to be affected
-import datetime
+from collections import defaultdict
+import functools
 import json
 import os
 import os.path
@@ -66,17 +67,23 @@ import re
 import sys
 
 import docopt
-import pytz
-
+import pkg_resources
 
 from ttapiutils.canonicalise import canonicalise
+from ttapiutils.deletegen import generate_deletes
 from ttapiutils.fixexport import fix_export_ids
 from ttapiutils.merge import merge
-from ttapiutils.deletegen import generate_deletes
 from ttapiutils.utils import (
-    parse_xml, read_password, get_credentials, get_proto,
-    TimetableApiUtilsException, serialise_http_request,
-    serialise_http_response, write_c14n_pretty)
+    DirectoryAuditLogger,
+    get_credentials,
+    get_proto,
+    parse_xml,
+    read_password,
+    serialise_http_request,
+    serialise_http_response,
+    TimetableApiUtilsException,
+    write_c14n_pretty
+)
 from ttapiutils.xmlexport import xmlexport
 from ttapiutils.xmlimport import xmlimport
 
@@ -84,24 +91,42 @@ from ttapiutils.xmlimport import xmlimport
 class NoSuchDataSourceException(TimetableApiUtilsException):
     pass
 
+class DataSourceParamsException(TimetableApiUtilsException):
+    pass
+
 
 def get_defined_data_source_entrypoints():
-    return [(ep.name, ep)
+    return dict((ep.name, ep)
             for ep in pkg_resources.iter_entry_points(
-            group="ttapiutils.autoimport.datasources")]
+            group="ttapiutils.autoimport.datasources"))
 
 
 class StreamDataSource(object):
     def __init__(self, file):
         self.file = file
 
+    @classmethod
+    def get_factory_for_file(cls, file):
+        return functools.partial(cls.factory, file)
+
+    @classmethod
+    def factory(cls, file, params):
+        # Ignore audit_log as we have nothing to log
+        params.pop("audit_log", None)
+
+        if len(params) != 0:
+            raise DataSourceParamsException(
+                "StreamDataSource received unexpected params")
+
+        return StreamDataSource(file)
+
     def get_xml(self):
         return parse_xml(self.file)
 
 
-def get_data_source(data_source_name, data_source_entrypoints=None):
+def get_data_source_factory(data_source_name, data_source_entrypoints=None):
     if data_source_name == "-":
-        return StreamDataSource(sys.stdin)
+        return StreamDataSource.get_factory_for_file(sys.stdin)
 
     if data_source_entrypoints is None:
         data_source_entrypoints = get_defined_data_source_entrypoints()
@@ -109,7 +134,20 @@ def get_data_source(data_source_name, data_source_entrypoints=None):
     if not data_source_name in data_source_entrypoints:
         raise NoSuchDataSourceException("No such data source: {!r}".format(data_source_name))
 
-    return data_source_entrypoints[data_source_name]
+    entrypoint = data_source_entrypoints[data_source_name]
+    return entrypoint.load()
+
+
+def parse_data_source_args(x_params):
+    params = defaultdict(list)
+    for item in x_params:
+        key, value = item.split("=", 1)
+        params[key].append(value)
+
+    # Flatten empty lists
+    items = ((key, value[0] if len(value) == 1 else value)
+             for (key, value) in params.items())
+    return dict(params.items())
 
 
 class AutoImporter(object):
@@ -185,57 +223,27 @@ def path_filename_representation(path):
 
 
 class AuditTrailAutoImporter(AutoImporter):
-    def __init__(self, audit_base_dir, *args, **kwargs):
-        now = kwargs.pop("now", None)
-        if now is not None and now.tzinfo is None:
-            raise ValueError("now must have a timezone: {}".format(now))
-
+    def __init__(self, audit_log, *args, **kwargs):
         super(AuditTrailAutoImporter, self).__init__(*args, **kwargs)
-        self._audit_base_dir = audit_base_dir
-        self._now = self._get_now() if now is None else now
-
-        self._create_audit_dir()
+        self._audit_log = audit_log
         self.log_manifest()
 
-    def _get_now(self):
-        """Get the current time in the UTC timezone."""
-        return pytz.utc.localize(datetime.datetime.utcnow())
-
-    def get_time(self):
-        return self._now
-
-    def get_timestamp(self):
-        return self.get_time().strftime("%Y-%m-%dT%H%M%S.%f%z")
-
-    def get_audit_dir(self):
-        return os.path.join(self._audit_base_dir, self.get_timestamp())
-
-    def _create_audit_dir(self):
-        os.mkdir(self.get_audit_dir())
-
-    def open_audit_file(self, filename, mode="w"):
-        return open(os.path.join(self.get_audit_dir(), filename), mode)
+    def log_xml(self, name, xml):
+        return self._audit_log.log_xml(name, xml)
 
     def log_manifest(self):
         """Log a JSON file containing the options"""
-        with self.open_audit_file("manifest.json") as f:
-            json.dump(self.get_manifest_json(), f, indent=4)
+        self._audit_log.log_json("manifest", self.get_manifest_json())
 
     def get_manifest_json(self):
         return {
             "pid": os.getpid(),
-            "audit_base_dir": self._audit_base_dir,
-            "time": self.get_timestamp(),
+            "time": self._audit_log.get_timestamp(),
             "permitted_paths": self.get_paths(),
             "http_proto": self.get_proto(),
             "domain": self.get_domain(),
             "is_dry_run": self.is_dry_run()
         }
-
-    def log_xml(self, name, xml):
-        with self.open_audit_file("{}.xml".format(name)) as f:
-            write_c14n_pretty(xml, f)
-        return xml
 
     # Override XML producing methods to log output to audit dir
     def get_raw_new_state(self):
@@ -273,21 +281,20 @@ class AuditTrailAutoImporter(AutoImporter):
         request, response = (super(AuditTrailAutoImporter, self)
             .import_to_timetable(api_xml))
 
-        with self.open_audit_file("http_request.txt") as f:
+        with self._audit_log.open_audit_file("http_request.txt") as f:
             serialise_http_request(request, f)
 
         # There's only an HTTP response if it's not a dry run
         if not self.is_dry_run():
             assert response is not None
-            with self.open_audit_file("http_response.txt") as f:
+            with self._audit_log.open_audit_file("http_response.txt") as f:
                 serialise_http_response(response, f)
 
 
 def main(argv):
     args = docopt.docopt(__doc__, argv=argv)
 
-    # TODO: -X args for data source
-    data_source = get_data_source(args["<data-source>"])
+    # TODO: log cmd line args in manifest.json
     credentials = get_credentials(args)
     proto = get_proto(args)
     domain = args["<domain>"]
@@ -295,16 +302,25 @@ def main(argv):
     audit_trail_base_dir = args["--audit-trail"]
     dry_run = args["--dry-run"]
 
+    data_source_factory = get_data_source_factory(args["<data-source>"])
+    data_source_params = parse_data_source_args(args["-X"])
+
     # Construct an auto importer from our params
-    args = [data_source, domain]
+    args = [domain]
     kwargs = dict(
         is_dry_run=dry_run, permitted_paths=paths, http_protocol=proto,
         auth=credentials)
     if audit_trail_base_dir is None:
         importer_class = AutoImporter
+        data_source = data_source_factory(data_source_params)
+        args = [data_source] + args
     else:
+        audit_log = DirectoryAuditLogger(audit_trail_base_dir)
+        data_source_params["audit_log"] = audit_log
+        data_source = data_source_factory(data_source_params)
         importer_class = AuditTrailAutoImporter
-        args = [audit_trail_base_dir] + args
+        args = [audit_log, data_source] + args
+
     auto_importer = importer_class(*args, **kwargs)
 
     # Perform the import

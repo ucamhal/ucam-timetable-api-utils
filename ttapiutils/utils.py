@@ -1,12 +1,15 @@
 from __future__ import print_function, unicode_literals
 
-import getpass
-import os
 from cStringIO import StringIO
+import datetime
+import getpass
+import json
+import os
 
 from lxml import etree
 from requests.auth import HTTPBasicAuth
 import pkg_resources
+import pytz
 
 
 class TimetableApiUtilsException(Exception):
@@ -108,3 +111,43 @@ def serialise_http_response(r, file=None):
 
     if file is None:
         return out.getvalue()
+
+
+class DirectoryAuditLogger(object):
+    def __init__(self, audit_base_dir, now=None):
+        if now is not None and now.tzinfo is None:
+            raise ValueError("now must have a timezone: {}".format(now))
+
+        self._audit_base_dir = audit_base_dir
+        self._now = self._get_now() if now is None else now
+
+        self._create_audit_dir()
+
+    def _get_now(self):
+        """Get the current time in the UTC timezone."""
+        return pytz.utc.localize(datetime.datetime.utcnow())
+
+    def get_time(self):
+        return self._now
+
+    def get_timestamp(self):
+        return self.get_time().strftime("%Y-%m-%dT%H%M%S.%f%z")
+
+    def get_audit_dir(self):
+        return os.path.join(self._audit_base_dir, self.get_timestamp())
+
+    def _create_audit_dir(self):
+        os.mkdir(self.get_audit_dir())
+
+    def open_audit_file(self, filename, mode="w"):
+        return open(os.path.join(self.get_audit_dir(), filename), mode)
+
+    def log_xml(self, name, xml):
+        with self.open_audit_file("{}.xml".format(name)) as f:
+            write_c14n_pretty(xml, f)
+        return xml
+
+    def log_json(self, name, obj):
+        with self.open_audit_file("{}.json".format(name)) as f:
+            json.dump(obj, f, indent=4)
+        return obj

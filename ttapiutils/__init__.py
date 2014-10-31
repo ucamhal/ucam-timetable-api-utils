@@ -15,6 +15,10 @@ import docopt
 import pkg_resources
 
 
+__version__ = "0.0.1"
+__version_info__ = tuple(int(i) for i in __version__.split("."))
+
+
 def get_subcommand_entrypoints():
     return dict(
         (ep.name, ep) for ep in

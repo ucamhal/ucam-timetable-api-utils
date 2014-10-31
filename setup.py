@@ -5,9 +5,25 @@ README = path.join(path.dirname(__file__), "README.rst")
 with open(README) as f:
     LONG_DESCRIPTION = f.read()
 
+
+def get_version(filename):
+    """
+    Parse the value of the __version__ var from a Python source file
+    without running/importing the file.
+    """
+    import re
+    version_pattern = r"^ *__version__ *= *['\"](\d+\.\d+\.\d+)['\"] *$"
+    match = re.search(version_pattern, open(filename).read(), re.MULTILINE)
+
+    assert match, ("No version found in file: {!r} matching pattern: {!r}"
+                   .format(filename, version_pattern))
+
+    return match.group(1)
+
+
 setup(
     name="ucam-timetable-api-utils",
-    version="0.1.0",
+    version=get_version("ttapiutils/__init__.py"),
     description=(
         "Utilities for working with the timetable.cam.ac.uk API/import "
         "functionality."),
@@ -29,7 +45,10 @@ setup(
         ]
     },
     packages=['ttapiutils'],
-    include_package_data=True,
+    package_data = {
+        "ttapiutils": ["data/*"],
+        "ttapiutils.tests": ['data/*']
+    },
     install_requires=[
         "docopt>=0.6.2",
         "lxml>=3.3.5",
