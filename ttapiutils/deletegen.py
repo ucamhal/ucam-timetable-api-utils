@@ -28,8 +28,10 @@ options:
 """
 from __future__ import unicode_literals
 
+from collections import Counter
 from copy import deepcopy
 from os import path
+import itertools
 import sys
 
 import docopt
@@ -72,8 +74,20 @@ def event_key(event):
 def index(items, key):
     indexed = dict((key(i), i) for i in items)
     if len(indexed) < len(items):
-        raise DuplicateKeyException("Two or more items share the same key")
+        raise report_duplicates(items, key)
     return indexed
+
+
+def report_duplicates(items, key):
+    key_counts = Counter(key(i) for i in items)
+    duplicates = (
+        (key, count) for (key, count) in
+        itertools.takewhile(lambda (_, n): n > 0, key_counts.most_common())
+    )
+    dupes_description = ", ".join("{!r}: {:d}x".format(key, count)
+                                  for (key, count) in duplicates)
+    return DuplicateKeyException(
+        "Duplicate items encountered: {}".format(dupes_description))
 
 
 def merge_module_lists(current, future):
